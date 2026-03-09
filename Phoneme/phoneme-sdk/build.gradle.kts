@@ -1,0 +1,41 @@
+plugins {
+    alias(libs.plugins.android.library)
+    id("ivi.maven.publish")
+}
+
+android {
+    namespace = "com.telenav.scoutivi.tts.phoneme"
+    compileSdk = libs.versions.compileSdk.get().toInt()
+
+    defaultConfig {
+
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+
+    implementation(project(":Phoneme:phoneme-aidl"))
+
+}
+
+mavenPublishing {
+    artifactId = "phoneme-sdk"
+}

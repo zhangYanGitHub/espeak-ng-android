@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">espeak-server</string>
+    <string name="enable_save_audio">Save Audio File</string>
+</resources>

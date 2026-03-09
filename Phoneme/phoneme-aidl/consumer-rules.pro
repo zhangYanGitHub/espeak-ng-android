@@ -1,0 +1,1 @@
+-keep class com.telenav.scoutivi.tts.phoneme.aidl.PhonemeResult {*;}
