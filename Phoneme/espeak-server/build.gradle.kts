@@ -25,7 +25,7 @@ android {
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.telenav.scoutivi.espeak"
+        applicationId = "com.espeak.tts.server"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = appVersionCode.toInt()

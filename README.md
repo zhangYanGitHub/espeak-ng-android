@@ -4,8 +4,11 @@ This project is an Android Text-To-Speech (TTS) service wrapper for the `espeak-
 
 ## Project Structure
 
-- `Speech/speech-service`: The Android TTS Service implementation (`TelenavTTSService`). This service binds to the Android system's TTS framework.
+- `Speech/speech-service`: The Android TTS Service implementation. This service binds to the Android system's TTS framework.
 - `Speech/sample`: A sample application to test the TTS engine with various languages and text inputs.
+- `Phoneme/espeak-ng`: The core native integration wrapper for the `espeak-ng` engine (handling text-to-phoneme and synthesis logic via JNI).
+- `Phoneme/espeak-server`: The background server/service handling the `espeak-ng` capabilities directly.
+- `Phoneme/phoneme-aidl` & `Phoneme/phoneme-sdk`: Defines the AIDL interfaces and SDK used to interact with the underlying phoneme extraction and TTS capabilities.
 
 ## Features
 
@@ -29,7 +32,7 @@ TextToSpeech tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
     @Override
     public void onInit(int status) {
         if (status == TextToSpeech.SUCCESS) {
-            tts.setEngineByPackageName("com.telenav.scoutivi.speech");
+            tts.setEngineByPackageName("com.espeak.tts.engine");
             tts.speak("Hello world", TextToSpeech.QUEUE_FLUSH, null, null);
         }
     }

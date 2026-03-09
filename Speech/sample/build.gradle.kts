@@ -8,7 +8,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.telenav.scoutivi.tts.app"
+        applicationId = "com.espeak.tts.sample"
         minSdk = 29
         targetSdk = 33
         versionCode = 1
