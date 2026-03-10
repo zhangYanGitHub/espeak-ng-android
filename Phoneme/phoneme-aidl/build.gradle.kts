@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.library)
-    id("ivi.maven.publish")
 }
 
 android {
@@ -33,8 +32,4 @@ android {
 
 dependencies {
 
-}
-
-mavenPublishing {
-    artifactId = "phoneme-aidl"
 }

@@ -2,7 +2,6 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    id("ivi.maven.publish")
 }
 
 android {
@@ -62,7 +61,3 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 }
 
-
-mavenPublishing {
-    artifactId = "enspeak-ng"
-}

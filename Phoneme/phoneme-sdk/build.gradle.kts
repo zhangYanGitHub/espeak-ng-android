@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.library)
-    id("ivi.maven.publish")
 }
 
 android {
@@ -34,8 +33,4 @@ dependencies {
 
     implementation(project(":Phoneme:phoneme-aidl"))
 
-}
-
-mavenPublishing {
-    artifactId = "phoneme-sdk"
 }

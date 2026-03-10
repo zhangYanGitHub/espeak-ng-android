@@ -10,6 +10,6 @@ buildscript {
 
     }
     dependencies{
-        classpath(libs.ivi.plugin.maven.publish)
+
     }
 }
