@@ -50,7 +50,3 @@ List<List<String>> phones = PhonemeManager.get().phoneme("Hello", "en");
 发行版实际可用音色也可在桌面环境执行 `espeak-ng --voices` 核对（与文档表一致思路）。
 
 `PhonemeManager` 内部通过 `Intent#setPackage(...)` 与上述 `action` 绑定服务。**请注意**：`espeak-server` 当前 Gradle 中的 `applicationId` 与 `phoneme-sdk` 里 `PhonemeManager` / `<queries>` 使用的包名可能不一致；集成前请对照 `Phoneme/espeak-server/build.gradle.kts` 与 `PhonemeManager.java`，将二者改为与你要安装的 APK **相同**的包名，否则 `bindService` 会失败。
-
-## 说明
-
-本工程已从更大型 TTS 方案中剥离，**不再包含** ONNX/VITS 等其它合成模型路径；当前焦点是 **espeak-ng 的 G2P 能力以独立 APK 服务形式交付**。
