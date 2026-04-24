@@ -1,43 +1,47 @@
 # espeak-ng-android
 
-This project is an Android Text-To-Speech (TTS) service wrapper for the `espeak-ng` engine. It allows Android applications to utilize `espeak-ng` for offline speech synthesis.
+本仓库在 Android 上以 **APK + 后台 Service** 的形式提供 **espeak-ng 的 G2P（字素到音素，Grapheme-to-Phoneme）** 能力：将文本按指定 espeak 音色转换为音素序列，供其它应用通过 **AIDL** 跨进程调用。  
+**不是** Android 系统 `TextToSpeechService` / 系统 TTS 引擎封装。
 
-## Project Structure
+## 模块说明
 
-- `Speech/speech-service`: The Android TTS Service implementation. This service binds to the Android system's TTS framework.
-- `Speech/sample`: A sample application to test the TTS engine with various languages and text inputs.
-- `Phoneme/espeak-ng`: The core native integration wrapper for the `espeak-ng` engine (handling text-to-phoneme and synthesis logic via JNI).
-- `Phoneme/espeak-server`: The background server/service handling the `espeak-ng` capabilities directly.
-- `Phoneme/phoneme-aidl` & `Phoneme/phoneme-sdk`: Defines the AIDL interfaces and SDK used to interact with the underlying phoneme extraction and TTS capabilities.
+| 模块 | 作用 |
+|------|------|
+| `Phoneme/espeak-ng` | 通过 JNI 加载 `espeak-ng` 等 native 库，完成初始化与音素转换等底层逻辑 |
+| `Phoneme/espeak-server` | 可安装 **APK**（宿主应用），注册并对外暴露 `PhonemeService` |
+| `Phoneme/phoneme-aidl` | `IPhonemeInterface` 等 AIDL 接口与数据结构 |
+| `Phoneme/phoneme-sdk` | 客户端侧 `PhonemeManager`：绑定远端服务并调用 `phoneme` / `tashkeelRun` 等 |
 
-## Features
+## 功能概要
 
-- Implements the standard Android `TextToSpeechService`.
-- Supports multiple languages provided by the `espeak-ng` engine.
-- Includes a sample app to test speech synthesis in real-time.
+- 基于 espeak-ng 的 **离线 G2P**：输入文本 + `espeakVoice`，返回分层音素列表（由服务端 `PhonemeService` 调用 native 实现）。
+- 通过 **显式 Intent + `BIND_AUTO_CREATE`** 绑定 `PhonemeService`；接口定义在 `phoneme-aidl`。
+- 另提供与阿拉伯语相关的 **tashkeel** 等扩展调用（见 AIDL 与 `PhonemeService` 实现）。
 
-## Getting Started
+## 构建与运行
 
-1. Clone the repository.
-2. Open the project in Android Studio.
-3. Build and run the `sample` module on an Android device or emulator.
-4. Select a language from the dropdown and click "Speak" to test the synthesis.
+1. 克隆本仓库，使用 Android Studio 打开根目录工程。  
+2. 构建并安装 **`Phoneme:espeak-server`** 模块生成的 APK（设备上需常驻该应用进程，以便其它应用绑定其 `Service`）。  
+3. 需要集成的应用依赖 **`phoneme-aidl`** 与 **`phoneme-sdk`**（或自行按 AIDL 绑定），在目标设备上已安装上述服务端 APK。
 
-## Integration
+服务端 APK 的 `applicationId` 在 `Phoneme/espeak-server/build.gradle.kts` 中配置；**当前默认**为 `com.espeak.tts.server`。绑定 `Service` 时需使用**与所安装 APK 一致**的包名，且 `action` 为：
 
-To use this TTS service in your own Android application, you can bind to it using the standard Android `TextToSpeech` API:
+`com.telenav.scoutivi.tts.PHONEME_SERVICE`
+
+（与 `PhonemeService` 在 `AndroidManifest.xml` 中的声明一致。）
+
+## 客户端集成示例
+
+使用本仓库提供的 SDK 时，在 `Application` 或合适生命周期内初始化并调用：
 
 ```java
-TextToSpeech tts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
-    @Override
-    public void onInit(int status) {
-        if (status == TextToSpeech.SUCCESS) {
-            tts.setEngineByPackageName("com.espeak.tts.engine");
-            tts.speak("Hello world", TextToSpeech.QUEUE_FLUSH, null, null);
-        }
-    }
-});
+PhonemeManager.get().init(getApplicationContext());
+// 在已绑定且 espeak-ng 初始化完成后：
+List<List<String>> phones = PhonemeManager.get().phoneme("Hello", "en");
 ```
 
-## Note
-This project has been stripped of other unrelated TTS models (such as ONNX/VITS models) and focuses solely on the `espeak-ng` integration.
+`PhonemeManager` 内部通过 `Intent#setPackage(...)` 与上述 `action` 绑定服务。**请注意**：`espeak-server` 当前 Gradle 中的 `applicationId` 与 `phoneme-sdk` 里 `PhonemeManager` / `<queries>` 使用的包名可能不一致；集成前请对照 `Phoneme/espeak-server/build.gradle.kts` 与 `PhonemeManager.java`，将二者改为与你要安装的 APK **相同**的包名，否则 `bindService` 会失败。
+
+## 说明
+
+本工程已从更大型 TTS 方案中剥离，**不再包含** ONNX/VITS 等其它合成模型路径；当前焦点是 **espeak-ng 的 G2P 能力以独立 APK 服务形式交付**。
