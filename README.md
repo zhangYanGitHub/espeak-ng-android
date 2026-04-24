@@ -1,52 +1,54 @@
+**English** | [简体中文](README.zh-CN.md)
+
 # espeak-ng-android
 
-本仓库在 Android 上以 **APK + 后台 Service** 的形式提供 **espeak-ng 的 G2P（字素到音素，Grapheme-to-Phoneme）** 能力：将文本按指定 espeak 音色转换为音素序列，供其它应用通过 **AIDL** 跨进程调用。  
-**不是** Android 系统 `TextToSpeechService` / 系统 TTS 引擎封装。
+Android **APK + background Service** that exposes **espeak-ng G2P (grapheme-to-phoneme)**: turn text into phoneme sequences for a given espeak voice, callable from other apps via **AIDL**.  
+This is **not** an Android system `TextToSpeechService` / system TTS engine wrapper.
 
-## 模块说明
+## Modules
 
-| 模块 | 作用 |
-|------|------|
-| `Phoneme/espeak-ng` | 通过 JNI 加载 `espeak-ng` 等 native 库，完成初始化与音素转换等底层逻辑 |
-| `Phoneme/espeak-server` | 可安装 **APK**（宿主应用），注册并对外暴露 `PhonemeService` |
-| `Phoneme/phoneme-aidl` | `IPhonemeInterface` 等 AIDL 接口与数据结构 |
-| `Phoneme/phoneme-sdk` | 客户端侧 `PhonemeManager`：绑定远端服务并调用 `phoneme` / `tashkeelRun` 等 |
+| Module | Role |
+|--------|------|
+| `Phoneme/espeak-ng` | JNI loads `espeak-ng` and related native libraries; init and phoneme conversion |
+| `Phoneme/espeak-server` | Installable **APK** (host app) exporting `PhonemeService` |
+| `Phoneme/phoneme-aidl` | AIDL interfaces and data types (`IPhonemeInterface`, etc.) |
+| `Phoneme/phoneme-sdk` | Client `PhonemeManager`: bind remote service, call `phoneme` / `tashkeelRun`, etc. |
 
-## 功能概要
+## Features
 
-- 基于 espeak-ng 的 **离线 G2P**：输入文本 + `espeakVoice`（须为 espeak-ng 支持的 **语言 Identifier**，见下文），返回分层音素列表（由服务端 `PhonemeService` 调用 native 实现）。
-- 通过 **显式 Intent + `BIND_AUTO_CREATE`** 绑定 `PhonemeService`；接口定义在 `phoneme-aidl`。
-- 另提供与阿拉伯语相关的 **tashkeel** 等扩展调用（见 AIDL 与 `PhonemeService` 实现）。
+- **Offline G2P** via espeak-ng: text + `espeakVoice` (must be a supported **language Identifier**; see below) → nested phoneme lists (`PhonemeService` calls native code).
+- Bind `PhonemeService` with an **explicit Intent** and `BIND_AUTO_CREATE`; contracts live in `phoneme-aidl`.
+- Extra APIs such as Arabic **tashkeel** (see AIDL and `PhonemeService`).
 
-## 构建与运行
+## Build & run
 
-1. 克隆本仓库，使用 Android Studio 打开根目录工程。  
-2. 构建并安装 **`Phoneme:espeak-server`** 模块生成的 APK（设备上需常驻该应用进程，以便其它应用绑定其 `Service`）。  
-3. 需要集成的应用依赖 **`phoneme-aidl`** 与 **`phoneme-sdk`**（或自行按 AIDL 绑定），在目标设备上已安装上述服务端 APK。
+1. Clone the repo and open the root project in Android Studio.  
+2. Build and install the APK from **`Phoneme:espeak-server`** (keep that app/process available so other apps can bind its `Service`).  
+3. Integrating apps depend on **`phoneme-aidl`** and **`phoneme-sdk`** (or bind using your own AIDL copy); the server APK must be installed on the device.
 
-服务端 APK 的 `applicationId` 在 `Phoneme/espeak-server/build.gradle.kts` 中配置；**当前默认**为 `com.espeak.tts.server`。绑定 `Service` 时需使用**与所安装 APK 一致**的包名，且 `action` 为：
+The server APK `applicationId` is set in `Phoneme/espeak-server/build.gradle.kts` (**default:** `com.espeak.tts.server`). Use a package name that **matches the installed APK**, with this service **action**:
 
 `com.telenav.scoutivi.tts.PHONEME_SERVICE`
 
-（与 `PhonemeService` 在 `AndroidManifest.xml` 中的声明一致。）
+(as declared for `PhonemeService` in `AndroidManifest.xml`).
 
-## 客户端集成示例
+## Client integration
 
-使用本仓库提供的 SDK 时，在 `Application` 或合适生命周期内初始化并调用：
+Initialize from `Application` (or similar), then call:
 
 ```java
 PhonemeManager.get().init(getApplicationContext());
-// 在已绑定且 espeak-ng 初始化完成后：
-// 第二个参数为 espeak 音色名，须使用官方文档「Identifier」列中的取值（BCP 47），例如英式英语 en、美式英语 en-us
+// After bind + espeak-ng init:
+// Second arg: espeak voice name — use the official table "Identifier" column (BCP 47), e.g. en, en-us
 List<List<String>> phones = PhonemeManager.get().phoneme("Hello", "en");
 ```
 
-### `espeakVoice`（语言 Identifier）
+### `espeakVoice` (language Identifier)
 
-`phoneme(..., espeakVoice)` 中的 `espeakVoice` 会传给 espeak-ng 选音色，**取值须与 espeak-ng 官方语言表中的 Identifier 一致**（如 `en`、`en-us`、`cmn`、`ja` 等），而不是随意缩写。完整列表与说明见官方文档：
+`espeakVoice` is passed to espeak-ng for voice selection. It **must** match an **Identifier** from the upstream language list (e.g. `en`, `en-us`, `cmn`, `ja`), not an ad‑hoc shorthand. Full table:
 
-[espeak-ng/docs/languages.md（Languages 与 Identifier 对照表）](https://github.com/espeak-ng/espeak-ng/blob/master/docs/languages.md)
+[espeak-ng/docs/languages.md](https://github.com/espeak-ng/espeak-ng/blob/master/docs/languages.md)
 
-发行版实际可用音色也可在桌面环境执行 `espeak-ng --voices` 核对（与文档表一致思路）。
+You can also cross-check installed voices with `espeak-ng --voices` on desktop builds.
 
-`PhonemeManager` 内部通过 `Intent#setPackage(...)` 与上述 `action` 绑定服务。**请注意**：`espeak-server` 当前 Gradle 中的 `applicationId` 与 `phoneme-sdk` 里 `PhonemeManager` / `<queries>` 使用的包名可能不一致；集成前请对照 `Phoneme/espeak-server/build.gradle.kts` 与 `PhonemeManager.java`，将二者改为与你要安装的 APK **相同**的包名，否则 `bindService` 会失败。
+`PhonemeManager` uses `Intent#setPackage(...)` plus the action above. **Note:** Gradle `applicationId` for `espeak-server` may differ from the package string in `PhonemeManager` / `<queries>` in `phoneme-sdk`. Before shipping, align `Phoneme/espeak-server/build.gradle.kts` with `PhonemeManager.java` so they match the APK you install; otherwise `bindService` fails.
